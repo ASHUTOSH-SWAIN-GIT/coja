@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"coja/pkg/index"
@@ -14,7 +16,7 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("usage: go run cmd/indexer/main.go <path-to-dump.xml.bz2>")
 		os.Exit(1)
-	}
+	}``
 
 	docs := make(chan parser.Document, 100)
 
@@ -27,12 +29,12 @@ func main() {
 
 	idx := index.NewIndex()
 	start := time.Now()
+	maxDocs := 50000
 
 	for doc := range docs {
 		clean := parser.StripWikitext(doc.Text)
 		tokens := tokenizer.Tokenize(clean)
 
-		// Convert tokens for the index
 		indexTokens := make([]struct {
 			Term     string
 			Position int
@@ -47,6 +49,10 @@ func main() {
 		if idx.TotalDocs%10000 == 0 {
 			fmt.Printf("Indexed %d docs (%s)\n", idx.TotalDocs, time.Since(start))
 		}
+
+		if idx.TotalDocs >= maxDocs {
+			break
+		}
 	}
 
 	fmt.Printf("\nDone in %s\n", time.Since(start))
@@ -54,16 +60,44 @@ func main() {
 	fmt.Printf("Unique terms: %d\n", len(idx.PostingLists))
 	fmt.Printf("Avg doc length: %.1f tokens\n", idx.AvgDocLength())
 
-	// Test a lookup
-	term := "anarchism"
-	if postings, ok := idx.PostingLists[term]; ok {
-		fmt.Printf("\nTerm '%s' appears in %d documents\n", term, len(postings))
-		limit := 5
-		if len(postings) < limit {
-			limit = len(postings)
+	// Interactive search REPL
+	fmt.Println("\n--- Search (type 'quit' to exit) ---")
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Print("\nquery> ")
+		if !scanner.Scan() {
+			break
 		}
-		for _, p := range postings[:limit] {
-			fmt.Printf("  doc %d (%s) — %d times\n", p.DocID, idx.DocStore[p.DocID].Title, p.Frequency)
+
+		query := strings.TrimSpace(scanner.Text())
+		if query == "quit" || query == "exit" {
+			break
+		}
+		if query == "" {
+			continue
+		}
+
+		queryTokens := tokenizer.Tokenize(query)
+		terms := make([]string, len(queryTokens))``
+		for i, t := range queryTokens {
+			terms[i] = t.Term
+		}
+
+		fmt.Printf("searching for: %v\n", terms)
+
+		searchStart := time.Now()
+		results := idx.Search(terms, 10)
+		elapsed := time.Since(searchStart)
+
+		if len(results) == 0 {
+			fmt.Println("no results found")
+			continue
+		}
+
+		fmt.Printf("found %d results in %s\n\n", len(results), elapsed)
+		for i, r := range results {
+			fmt.Printf("  %d. [%.4f] %s\n", i+1, r.Score, r.Title)
 		}
 	}
 }
