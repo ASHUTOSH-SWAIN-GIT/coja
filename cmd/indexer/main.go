@@ -2,6 +2,7 @@ package main
 
 import (
 	"coja/pkg/parser"
+	"coja/pkg/tokenizer"
 	"fmt"
 	"os"
 )
@@ -15,21 +16,32 @@ func main() {
 	docs := make(chan parser.Document, 100)
 
 	go func() {
-		if err := parser.Parse(os.Args[1],docs);err != nil {
-			fmt.Println("parse error:" , err)
+		if err := parser.Parse(os.Args[1], docs); err != nil {
+			fmt.Println("parse error:", err)
 			os.Exit(1)
 		}
 	}()
 
-	
 	count := 0
 	for doc := range docs {
-		fmt.Printf("[%d] %s (text: %d bytes)\n", doc.ID, doc.Title, len(doc.Text))
+		clean := parser.StripWikitext(doc.Text)
+		tokens := tokenizer.Tokenize(clean)
+
+		fmt.Printf("[%d] %s — %d tokens\n", doc.ID, doc.Title, len(tokens))
+
+		// Show first 20 tokens
+		limit := 20
+		if len(tokens) < limit {
+			limit = len(tokens)
+		}
+		for _, t := range tokens[:limit] {
+			fmt.Printf("  %d: %s\n", t.Position, t.Term)
+		}
+		fmt.Println()
+
 		count++
-		if count >= 10 {
+		if count >= 3 {
 			break
 		}
 	}
-
-	fmt.Printf("\nParsed %d articles\n", count)
 }
