@@ -1,10 +1,13 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
+	"runtime"
+	"sync"
 	"time"
 
 	"coja/pkg/index"
@@ -12,92 +15,187 @@ import (
 	"coja/pkg/tokenizer"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("usage: go run cmd/indexer/main.go <path-to-dump.xml.bz2>")
-		os.Exit(1)
-	}``
+type indexedDoc struct {
+	DocID  int
+	Title  string
+	Tokens []index.TermPosition
+}
 
-	docs := make(chan parser.Document, 100)
+type segmentMeta struct {
+	File        string `json:"file"`
+	Docs        int    `json:"docs"`
+	UniqueTerms int    `json:"unique_terms"`
+	TotalTokens int64  `json:"total_tokens"`
+}
+
+type manifest struct {
+	Source         string        `json:"source"`
+	CreatedAt      time.Time     `json:"created_at"`
+	Workers        int           `json:"workers"`
+	CheckpointDocs int           `json:"checkpoint_docs"`
+	Segments       []segmentMeta `json:"segments"`
+	TotalDocs      int           `json:"total_docs"`
+	TotalTokens    int64         `json:"total_tokens"`
+}
+
+func main() {
+	workers := flag.Int("workers", runtime.NumCPU(), "number of text processing workers")
+	checkpointDocs := flag.Int("checkpoint-docs", 100000, "documents per checkpoint segment")
+	outputDir := flag.String("out-dir", "data/index", "directory where segment and manifest files are saved")
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		fmt.Println("usage: go run cmd/indexer/main.go [flags] <path-to-dump.xml[.bz2]|->")
+		fmt.Println("example (parallel decompress): pbzip2 -dc dump.xml.bz2 | go run cmd/indexer/main.go -")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	if *workers < 1 {
+		fmt.Println("workers must be >= 1")
+		os.Exit(1)
+	}
+	if *checkpointDocs < 1 {
+		fmt.Println("checkpoint-docs must be >= 1")
+		os.Exit(1)
+	}
+
+	input := flag.Arg(0)
+
+	start := time.Now()
+	if err := os.MkdirAll(*outputDir, 0o755); err != nil {
+		fmt.Println("create output directory error:", err)
+		os.Exit(1)
+	}
+
+	rawDocs := make(chan parser.Document, 1024)
+	processedDocs := make(chan indexedDoc, 2048)
+	parseErrCh := make(chan error, 1)
 
 	go func() {
-		if err := parser.Parse(os.Args[1], docs); err != nil {
-			fmt.Println("parse error:", err)
-			os.Exit(1)
-		}
+		parseErrCh <- parser.Parse(input, rawDocs)
 	}()
 
-	idx := index.NewIndex()
-	start := time.Now()
-	maxDocs := 50000
+	var workersWG sync.WaitGroup
+	for i := 0; i < *workers; i++ {
+		workersWG.Add(1)
+		go func() {
+			defer workersWG.Done()
+			for doc := range rawDocs {
+				clean := parser.StripWikitext(doc.Text)
+				tokens := tokenizer.Tokenize(clean)
 
-	for doc := range docs {
-		clean := parser.StripWikitext(doc.Text)
-		tokens := tokenizer.Tokenize(clean)
+				indexTokens := make([]index.TermPosition, len(tokens))
+				for i, t := range tokens {
+					indexTokens[i] = index.TermPosition{
+						Term:     t.Term,
+						Position: t.Position,
+					}
+				}
 
-		indexTokens := make([]struct {
-			Term     string
-			Position int
-		}, len(tokens))
-		for i, t := range tokens {
-			indexTokens[i].Term = t.Term
-			indexTokens[i].Position = t.Position
+				processedDocs <- indexedDoc{
+					DocID:  doc.ID,
+					Title:  doc.Title,
+					Tokens: indexTokens,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		workersWG.Wait()
+		close(processedDocs)
+	}()
+
+	currentSegment := index.NewIndex()
+	var savedSegments []segmentMeta
+	segmentNumber := 1
+	totalDocs := 0
+	var totalTokens int64
+
+	for processed := range processedDocs {
+		currentSegment.AddDocument(processed.DocID, processed.Title, processed.Tokens)
+		totalDocs++
+
+		if totalDocs%10000 == 0 {
+			fmt.Printf("Processed %d docs (%s)\n", totalDocs, time.Since(start))
 		}
 
-		idx.AddDocument(doc.ID, doc.Title, indexTokens)
+		if currentSegment.TotalDocs >= *checkpointDocs {
+			meta, err := saveSegment(*outputDir, segmentNumber, currentSegment)
+			if err != nil {
+				fmt.Println("save segment error:", err)
+				os.Exit(1)
+			}
 
-		if idx.TotalDocs%10000 == 0 {
-			fmt.Printf("Indexed %d docs (%s)\n", idx.TotalDocs, time.Since(start))
+			savedSegments = append(savedSegments, meta)
+			totalTokens += currentSegment.TotalTokens
+			fmt.Printf("Saved segment %d (%d docs, %d terms) -> %s\n", segmentNumber, meta.Docs, meta.UniqueTerms, meta.File)
+
+			segmentNumber++
+			currentSegment = index.NewIndex()
+		}
+	}
+
+	if currentSegment.TotalDocs > 0 {
+		meta, err := saveSegment(*outputDir, segmentNumber, currentSegment)
+		if err != nil {
+			fmt.Println("save segment error:", err)
+			os.Exit(1)
 		}
 
-		if idx.TotalDocs >= maxDocs {
-			break
-		}
+		savedSegments = append(savedSegments, meta)
+		totalTokens += currentSegment.TotalTokens
+		fmt.Printf("Saved segment %d (%d docs, %d terms) -> %s\n", segmentNumber, meta.Docs, meta.UniqueTerms, meta.File)
+	}
+
+	parseErr := <-parseErrCh
+	if parseErr != nil {
+		fmt.Println("parse error:", parseErr)
+		os.Exit(1)
+	}
+
+	manifestPath := filepath.Join(*outputDir, "manifest.json")
+	projectManifest := manifest{
+		Source:         input,
+		CreatedAt:      time.Now().UTC(),
+		Workers:        *workers,
+		CheckpointDocs: *checkpointDocs,
+		Segments:       savedSegments,
+		TotalDocs:      totalDocs,
+		TotalTokens:    totalTokens,
+	}
+
+	manifestBytes, err := json.MarshalIndent(projectManifest, "", "  ")
+	if err != nil {
+		fmt.Println("manifest encode error:", err)
+		os.Exit(1)
+	}
+
+	if err := os.WriteFile(manifestPath, manifestBytes, 0o644); err != nil {
+		fmt.Println("manifest write error:", err)
+		os.Exit(1)
 	}
 
 	fmt.Printf("\nDone in %s\n", time.Since(start))
-	fmt.Printf("Documents: %d\n", idx.TotalDocs)
-	fmt.Printf("Unique terms: %d\n", len(idx.PostingLists))
-	fmt.Printf("Avg doc length: %.1f tokens\n", idx.AvgDocLength())
+	fmt.Printf("Total docs indexed: %d\n", totalDocs)
+	fmt.Printf("Total tokens indexed: %d\n", totalTokens)
+	fmt.Printf("Segments written: %d\n", len(savedSegments))
+	fmt.Printf("Manifest: %s\n", manifestPath)
+}
 
-	// Interactive search REPL
-	fmt.Println("\n--- Search (type 'quit' to exit) ---")
-	scanner := bufio.NewScanner(os.Stdin)
+func saveSegment(outputDir string, segmentNumber int, idx *index.Index) (segmentMeta, error) {
+	fileName := fmt.Sprintf("segment_%06d.gob", segmentNumber)
+	filePath := filepath.Join(outputDir, fileName)
 
-	for {
-		fmt.Print("\nquery> ")
-		if !scanner.Scan() {
-			break
-		}
-
-		query := strings.TrimSpace(scanner.Text())
-		if query == "quit" || query == "exit" {
-			break
-		}
-		if query == "" {
-			continue
-		}
-
-		queryTokens := tokenizer.Tokenize(query)
-		terms := make([]string, len(queryTokens))``
-		for i, t := range queryTokens {
-			terms[i] = t.Term
-		}
-
-		fmt.Printf("searching for: %v\n", terms)
-
-		searchStart := time.Now()
-		results := idx.Search(terms, 10)
-		elapsed := time.Since(searchStart)
-
-		if len(results) == 0 {
-			fmt.Println("no results found")
-			continue
-		}
-
-		fmt.Printf("found %d results in %s\n\n", len(results), elapsed)
-		for i, r := range results {
-			fmt.Printf("  %d. [%.4f] %s\n", i+1, r.Score, r.Title)
-		}
+	if err := index.SaveToFile(filePath, idx); err != nil {
+		return segmentMeta{}, err
 	}
+
+	return segmentMeta{
+		File:        fileName,
+		Docs:        idx.TotalDocs,
+		UniqueTerms: len(idx.PostingLists),
+		TotalTokens: idx.TotalTokens,
+	}, nil
 }

@@ -3,7 +3,10 @@ package parser
 import (
 	"compress/bzip2"
 	"encoding/xml"
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -39,48 +42,59 @@ it skips redirects and non article page
 */
 
 func Parse(path string, out chan<- Document) error {
+	defer close(out)
+
+	if path == "-" {
+		return ParseReader(os.Stdin, out)
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
-	//bzip2 compressor reads from the file
-	bzReader := bzip2.NewReader(f)
-	decoder := xml.NewDecoder(bzReader)
+	var reader io.Reader = f
+	if strings.EqualFold(filepath.Ext(path), ".bz2") {
+		reader = bzip2.NewReader(f)
+	}
+
+	return ParseReader(reader, out)
+}
+
+// ParseReader streams wikipedia XML from any reader and sends documents on out.
+func ParseReader(r io.Reader, out chan<- Document) error {
+	decoder := xml.NewDecoder(r)
 
 	for {
-		//read the new xml token
 		token, err := decoder.Token()
 		if err != nil {
-			break
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("decode token: %w", err)
 		}
 
-		//we only care about <page> start elements
 		startElem, ok := token.(xml.StartElement)
 		if !ok || startElem.Name.Local != "page" {
 			continue
 		}
 
-		//decode the full <page> into our struct
 		var page xmlPage
 		if err := decoder.DecodeElement(&page, &startElem); err != nil {
 			continue
 		}
 
-		//skip non articale name spaces
 		if page.NS != 0 {
 			continue
 		}
 
-		//skip redirects
 		if page.Redirect != nil {
 			continue
 		}
 
-		// Skip text-based redirects
-		if strings.HasPrefix(strings.TrimSpace(page.Revision.Text.Content), "#REDIRECT") {
+		trimmed := strings.TrimSpace(page.Revision.Text.Content)
+		if strings.HasPrefix(strings.ToUpper(trimmed), "#REDIRECT") {
 			continue
 		}
 
@@ -90,6 +104,4 @@ func Parse(path string, out chan<- Document) error {
 			Text:  page.Revision.Text.Content,
 		}
 	}
-	close(out)
-	return nil
 }

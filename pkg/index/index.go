@@ -7,6 +7,12 @@ type Posting struct {
 	Positions []int
 }
 
+// TermPosition represents a normalized term and where it occurred in the document.
+type TermPosition struct {
+	Term     string
+	Position int
+}
+
 // DocInfo stores metadata about a document
 type DocInfo struct {
 	Title  string
@@ -22,7 +28,7 @@ type Index struct {
 	DocStore map[int]DocInfo
 
 	// corpus stats for BM25
-	TotalDocs  int
+	TotalDocs   int
 	TotalTokens int64
 }
 
@@ -35,10 +41,7 @@ func NewIndex() *Index {
 }
 
 // AddDocument indexes a single document's tokens
-func (idx *Index) AddDocument(docID int, title string, tokens []struct {
-	Term     string
-	Position int
-}) {
+func (idx *Index) AddDocument(docID int, title string, tokens []TermPosition) {
 	// Count term frequencies and collect positions
 	termFreq := make(map[string][]int)
 	for _, t := range tokens {
@@ -70,4 +73,22 @@ func (idx *Index) AvgDocLength() float64 {
 		return 0
 	}
 	return float64(idx.TotalTokens) / float64(idx.TotalDocs)
+}
+
+// Merge merges another index into the receiver.
+func (idx *Index) Merge(other *Index) {
+	if other == nil {
+		return
+	}
+
+	for term, postings := range other.PostingLists {
+		idx.PostingLists[term] = append(idx.PostingLists[term], postings...)
+	}
+
+	for docID, info := range other.DocStore {
+		idx.DocStore[docID] = info
+	}
+
+	idx.TotalDocs += other.TotalDocs
+	idx.TotalTokens += other.TotalTokens
 }

@@ -78,8 +78,7 @@ func Tokenize(text string) []Token {
 			Term:     stemmed,
 			Position: pos,
 		})
-
-	
+		pos++
 	}
 	return tokens
 }
