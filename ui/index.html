@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coja Search</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Coja Search</h1>
+      <form id="searchForm">
+        <input id="q" name="q" placeholder="Search query..." required />
+        <input id="k" name="k" type="number" min="1" max="100" value="10" />
+        <button type="submit">Search</button>
+      </form>
+      <div class="meta" id="meta"></div>
+      <div id="results"></div>
+    </div>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>

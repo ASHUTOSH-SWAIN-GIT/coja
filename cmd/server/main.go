@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +34,7 @@ type healthResponse struct {
 
 func main() {
 	indexDir := flag.String("index-dir", "data/index", "directory containing manifest.json and segment files")
+	uiDir := flag.String("ui-dir", "ui", "directory containing static UI files")
 	port := flag.Int("port", 8080, "HTTP port")
 	topKDefault := flag.Int("topk-default", 10, "default top-K results when k is omitted")
 	flag.Parse()
@@ -44,15 +47,23 @@ func main() {
 	log.Printf("loaded index from %s in %s", *indexDir, time.Since(start))
 	log.Printf("segments=%d docs=%d terms=%d tokens=%d", len(manifest.Segments), idx.TotalDocs, len(idx.PostingLists), idx.TotalTokens)
 
+	absUI, err := filepath.Abs(*uiDir)
+	if err != nil {
+		log.Fatalf("invalid ui-dir: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(absUI, "index.html")); err != nil {
+		log.Fatalf("ui-dir %s missing index.html: %v", absUI, err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte(indexHTML))
+		http.ServeFile(w, r, filepath.Join(absUI, "index.html"))
 	})
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(absUI))))
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, healthResponse{
@@ -116,146 +127,3 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
 }
-
-const indexHTML = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Coja Search</title>
-  <style>
-    :root {
-      --bg: #f4f1ea;
-      --paper: #fffdf9;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #d1d5db;
-      --accent: #0f766e;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: radial-gradient(circle at top, #f9f7f2, var(--bg) 60%);
-      color: var(--text);
-      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-    }
-    .wrap {
-      max-width: 820px;
-      margin: 40px auto;
-      padding: 0 16px 32px;
-    }
-    .card {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 16px;
-    }
-    h1 {
-      margin: 0 0 12px;
-      font-size: 1.35rem;
-    }
-    form {
-      display: grid;
-      grid-template-columns: 1fr 110px 120px;
-      gap: 8px;
-    }
-    input, button {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 14px;
-    }
-    button {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-      cursor: pointer;
-    }
-    .meta {
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 13px;
-      min-height: 18px;
-    }
-    .result {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-    }
-    .title { font-weight: 600; }
-    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
-    @media (max-width: 680px) {
-      form { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Coja Search</h1>
-      <form id="searchForm">
-        <input id="q" name="q" placeholder="Search query..." required />
-        <input id="k" name="k" type="number" min="1" max="100" value="10" />
-        <button type="submit">Search</button>
-      </form>
-      <div class="meta" id="meta"></div>
-      <div id="results"></div>
-    </div>
-  </div>
-
-  <script>
-    const form = document.getElementById("searchForm");
-    const q = document.getElementById("q");
-    const k = document.getElementById("k");
-    const meta = document.getElementById("meta");
-    const results = document.getElementById("results");
-
-    function esc(s) {
-      return String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
-    }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const query = q.value.trim();
-      const topK = k.value || "10";
-      if (!query) return;
-
-      results.innerHTML = "";
-      meta.textContent = "Searching...";
-
-      try {
-        const resp = await fetch("/search?q=" + encodeURIComponent(query) + "&k=" + encodeURIComponent(topK));
-        const text = await resp.text();
-        if (!resp.ok) {
-          meta.textContent = "Error: " + text;
-          return;
-        }
-
-        const data = JSON.parse(text);
-        const terms = (data.terms || []).join(", ");
-        meta.textContent = "Results: " + data.results_count + " | Terms: [" + terms + "] | " + data.duration_ms + "ms";
-
-        if (!data.results || data.results.length === 0) {
-          results.innerHTML = "<div class='result'>No results found.</div>";
-          return;
-        }
-
-        results.innerHTML = data.results.map((r, i) =>
-          "<div class='result'>" +
-            "<div class='title'>" + (i + 1) + ". " + esc(r.Title) + "</div>" +
-            "<div class='sub'>doc=" + r.DocID + " | score=" + Number(r.Score).toFixed(4) + "</div>" +
-          "</div>"
-        ).join("");
-      } catch (err) {
-        meta.textContent = "Error: " + err.message;
-      }
-    });
-  </script>
-</body>
-</html>`
