@@ -106,14 +106,12 @@ Example response:
 ```json
 {
   "query": "india",
-  "terms": ["india"],
   "results_count": 2,
   "duration_ms": 11,
   "results": [
     {
-      "DocID": 750048,
-      "Title": "List of Indian Mutiny Victoria Cross recipients",
-      "Score": 5.7868
+      "title": "List of Indian Mutiny Victoria Cross recipients",
+      "url": "https://en.wikipedia.org/wiki/List_of_Indian_Mutiny_Victoria_Cross_recipients"
     }
   ]
 }
@@ -146,4 +144,3 @@ Run tests:
 ```bash
 go test ./...
 ```
-

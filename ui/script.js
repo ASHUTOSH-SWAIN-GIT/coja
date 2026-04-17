@@ -30,18 +30,17 @@ form.addEventListener("submit", async (e) => {
     }
 
     const data = JSON.parse(text);
-    const terms = (data.terms || []).join(", ");
-    meta.textContent = "Results: " + data.results_count + " | Terms: [" + terms + "] | " + data.duration_ms + "ms";
+    meta.textContent = "About " + data.results_count + " results (" + data.duration_ms + " ms)";
 
     if (!data.results || data.results.length === 0) {
       results.innerHTML = "<div class='result'>No results found.</div>";
       return;
     }
 
-    results.innerHTML = data.results.map((r, i) =>
+    results.innerHTML = data.results.map((r) =>
       "<div class='result'>" +
-        "<div class='title'>" + (i + 1) + ". " + esc(r.Title) + "</div>" +
-        "<div class='sub'>doc=" + r.DocID + " | score=" + Number(r.Score).toFixed(4) + "</div>" +
+        "<div class='url'>" + esc(r.url) + "</div>" +
+        "<a class='title' href='" + esc(r.url) + "' target='_blank' rel='noopener noreferrer'>" + esc(r.title) + "</a>" +
       "</div>"
     ).join("");
   } catch (err) {

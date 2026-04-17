@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,10 +19,14 @@ import (
 
 type searchResponse struct {
 	Query        string         `json:"query"`
-	Terms        []string       `json:"terms"`
 	ResultsCount int            `json:"results_count"`
 	DurationMS   int64          `json:"duration_ms"`
-	Results      []index.Result `json:"results"`
+	Results      []searchResult `json:"results"`
+}
+
+type searchResult struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
 }
 
 type healthResponse struct {
@@ -107,10 +112,17 @@ func main() {
 		}
 
 		searchStart := time.Now()
-		results := idx.Search(terms, k)
+		rawResults := idx.Search(terms, k)
+		results := make([]searchResult, len(rawResults))
+		for i, r := range rawResults {
+			results[i] = searchResult{
+				Title: r.Title,
+				URL:   wikipediaURL(r.Title),
+			}
+		}
+
 		writeJSON(w, http.StatusOK, searchResponse{
 			Query:        rawQuery,
-			Terms:        terms,
 			ResultsCount: len(results),
 			DurationMS:   time.Since(searchStart).Milliseconds(),
 			Results:      results,
@@ -126,4 +138,9 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func wikipediaURL(title string) string {
+	normalized := strings.ReplaceAll(strings.TrimSpace(title), " ", "_")
+	return "https://en.wikipedia.org/wiki/" + url.PathEscape(normalized)
 }

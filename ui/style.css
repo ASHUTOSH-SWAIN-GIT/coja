@@ -1,10 +1,10 @@
 :root {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
-  --border: #2a2a2a;
-  --text: #e0e0e0;
-  --muted: #777;
-  --accent: #10b981;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --border: #dcdfe3;
+  --text: #202124;
+  --muted: #5f6368;
+  --accent: #1a73e8;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,81 +12,88 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 .wrap {
-  max-width: 820px;
-  margin: 60px auto;
+  max-width: 760px;
+  margin: 32px auto;
   padding: 0 16px;
 }
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
+  border: 0;
+  padding: 0;
 }
 
 h1 {
-  font-size: 1.25rem;
-  margin-bottom: 14px;
-  font-weight: 600;
+  font-size: 2rem;
+  margin-bottom: 18px;
+  font-weight: 500;
 }
 
 form {
   display: grid;
-  grid-template-columns: 1fr 90px 100px;
-  gap: 8px;
+  grid-template-columns: 1fr 84px 110px;
+  gap: 10px;
 }
 
 input, button {
-  background: var(--bg);
+  background: #fff;
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: 22px;
+  padding: 12px 14px;
   font-size: 14px;
   outline: none;
 }
 
 input:focus {
   border-color: var(--accent);
+  box-shadow: 0 1px 6px rgba(26, 115, 232, 0.2);
 }
 
 button {
   background: var(--accent);
-  color: #000;
+  color: #fff;
   border-color: var(--accent);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 button:hover {
-  opacity: 0.85;
+  background: #1558b0;
 }
 
 .meta {
-  margin-top: 14px;
+  margin-top: 16px;
   color: var(--muted);
   font-size: 13px;
   min-height: 18px;
 }
 
 .result {
-  margin-top: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
-.title { font-weight: 600; }
+.title {
+  color: #1a0dab;
+  text-decoration: none;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
 
-.sub {
-  color: var(--muted);
+.title:hover { text-decoration: underline; }
+
+.url {
+  color: #188038;
   font-size: 12px;
-  margin-top: 4px;
+  margin-bottom: 3px;
+  word-break: break-all;
 }
 
 @media (max-width: 680px) {
