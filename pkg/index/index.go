@@ -19,6 +19,7 @@ type DocInfo struct {
 	Length      int // body token count, kept for compatibility
 	BodyLength  int
 	TitleLength int
+	IntroLength int
 }
 
 // Index is the inverted index
@@ -27,6 +28,8 @@ type Index struct {
 	PostingLists map[string][]Posting
 	// title token -> list of postings
 	TitlePostingLists map[string][]Posting
+	// intro token -> list of postings
+	IntroPostingLists map[string][]Posting
 
 	// docID → document metadata
 	DocStore map[int]DocInfo
@@ -36,6 +39,7 @@ type Index struct {
 	TotalTokens      int64 // body tokens, kept for compatibility
 	TotalBodyTokens  int64
 	TotalTitleTokens int64
+	TotalIntroTokens int64
 }
 
 // NewIndex creates an empty index
@@ -43,12 +47,13 @@ func NewIndex() *Index {
 	return &Index{
 		PostingLists:      make(map[string][]Posting),
 		TitlePostingLists: make(map[string][]Posting),
+		IntroPostingLists: make(map[string][]Posting),
 		DocStore:          make(map[int]DocInfo),
 	}
 }
 
-// AddDocument indexes a single document's body and title tokens.
-func (idx *Index) AddDocument(docID int, title string, bodyTokens []TermPosition, titleTokens []TermPosition) {
+// AddDocument indexes a single document's body, title and intro tokens.
+func (idx *Index) AddDocument(docID int, title string, bodyTokens []TermPosition, titleTokens []TermPosition, introTokens []TermPosition) {
 	// Count body term frequencies and collect positions
 	bodyTermFreq := make(map[string][]int)
 	for _, t := range bodyTokens {
@@ -77,18 +82,33 @@ func (idx *Index) AddDocument(docID int, title string, bodyTokens []TermPosition
 		})
 	}
 
+	introTermFreq := make(map[string][]int)
+	for _, t := range introTokens {
+		introTermFreq[t.Term] = append(introTermFreq[t.Term], t.Position)
+	}
+
+	for term, positions := range introTermFreq {
+		idx.IntroPostingLists[term] = append(idx.IntroPostingLists[term], Posting{
+			DocID:     docID,
+			Frequency: len(positions),
+			Positions: positions,
+		})
+	}
+
 	// Store document metadata
 	idx.DocStore[docID] = DocInfo{
 		Title:       title,
 		Length:      len(bodyTokens),
 		BodyLength:  len(bodyTokens),
 		TitleLength: len(titleTokens),
+		IntroLength: len(introTokens),
 	}
 
 	idx.TotalDocs++
 	idx.TotalTokens += int64(len(bodyTokens))
 	idx.TotalBodyTokens += int64(len(bodyTokens))
 	idx.TotalTitleTokens += int64(len(titleTokens))
+	idx.TotalIntroTokens += int64(len(introTokens))
 }
 
 // AvgDocLength returns the average body length across the corpus.
@@ -113,6 +133,17 @@ func (idx *Index) AvgTitleLength() float64 {
 	return float64(idx.TotalTitleTokens) / float64(idx.TotalDocs)
 }
 
+// AvgIntroLength returns the average intro length across the corpus.
+func (idx *Index) AvgIntroLength() float64 {
+	if idx.TotalDocs == 0 {
+		return 0
+	}
+	if idx.TotalIntroTokens == 0 {
+		return 1
+	}
+	return float64(idx.TotalIntroTokens) / float64(idx.TotalDocs)
+}
+
 // Merge merges another index into the receiver.
 func (idx *Index) Merge(other *Index) {
 	if other == nil {
@@ -125,6 +156,9 @@ func (idx *Index) Merge(other *Index) {
 	for term, postings := range other.TitlePostingLists {
 		idx.TitlePostingLists[term] = append(idx.TitlePostingLists[term], postings...)
 	}
+	for term, postings := range other.IntroPostingLists {
+		idx.IntroPostingLists[term] = append(idx.IntroPostingLists[term], postings...)
+	}
 
 	for docID, info := range other.DocStore {
 		idx.DocStore[docID] = info
@@ -134,4 +168,5 @@ func (idx *Index) Merge(other *Index) {
 	idx.TotalTokens += other.TotalTokens
 	idx.TotalBodyTokens += other.TotalBodyTokens
 	idx.TotalTitleTokens += other.TotalTitleTokens
+	idx.TotalIntroTokens += other.TotalIntroTokens
 }

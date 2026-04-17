@@ -51,6 +51,9 @@ func LoadFromFile(path string) (*Index, error) {
 	if idx.TitlePostingLists == nil {
 		idx.TitlePostingLists = make(map[string][]Posting)
 	}
+	if idx.IntroPostingLists == nil {
+		idx.IntroPostingLists = make(map[string][]Posting)
+	}
 	if idx.DocStore == nil {
 		idx.DocStore = make(map[int]DocInfo)
 	}

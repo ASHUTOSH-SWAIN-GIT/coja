@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"coja/pkg/index"
-	"coja/pkg/tokenizer"
 )
 
 type searchResponse struct {
@@ -100,19 +99,14 @@ func main() {
 			k = parsedK
 		}
 
-		queryTokens := tokenizer.Tokenize(rawQuery)
-		if len(queryTokens) == 0 {
+		parsed := index.ParseQuery(rawQuery)
+		if len(parsed.Terms) == 0 {
 			http.Error(w, "query has no searchable terms after tokenization", http.StatusBadRequest)
 			return
 		}
 
-		terms := make([]string, len(queryTokens))
-		for i, t := range queryTokens {
-			terms[i] = t.Term
-		}
-
 		searchStart := time.Now()
-		rawResults := idx.Search(terms, k)
+		rawResults := idx.SearchQuery(rawQuery, k)
 		results := make([]searchResult, len(rawResults))
 		for i, r := range rawResults {
 			results[i] = searchResult{

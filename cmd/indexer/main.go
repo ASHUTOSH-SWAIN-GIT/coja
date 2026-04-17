@@ -20,6 +20,7 @@ type indexedDoc struct {
 	Title       string
 	BodyTokens  []index.TermPosition
 	TitleTokens []index.TermPosition
+	IntroTokens []index.TermPosition
 }
 
 type segmentMeta struct {
@@ -84,8 +85,10 @@ func main() {
 			defer workersWG.Done()
 			for doc := range rawDocs {
 				clean := parser.StripWikitext(doc.Text)
+				intro := parser.ExtractIntro(clean)
 				bodyTokens := tokenizer.Tokenize(clean)
 				titleTokens := tokenizer.Tokenize(doc.Title)
+				introTokens := tokenizer.Tokenize(intro)
 
 				indexBodyTokens := make([]index.TermPosition, len(bodyTokens))
 				for i, t := range bodyTokens {
@@ -101,12 +104,20 @@ func main() {
 						Position: t.Position,
 					}
 				}
+				indexIntroTokens := make([]index.TermPosition, len(introTokens))
+				for i, t := range introTokens {
+					indexIntroTokens[i] = index.TermPosition{
+						Term:     t.Term,
+						Position: t.Position,
+					}
+				}
 
 				processedDocs <- indexedDoc{
 					DocID:       doc.ID,
 					Title:       doc.Title,
 					BodyTokens:  indexBodyTokens,
 					TitleTokens: indexTitleTokens,
+					IntroTokens: indexIntroTokens,
 				}
 			}
 		}()
@@ -124,7 +135,7 @@ func main() {
 	var totalTokens int64
 
 	for processed := range processedDocs {
-		currentSegment.AddDocument(processed.DocID, processed.Title, processed.BodyTokens, processed.TitleTokens)
+		currentSegment.AddDocument(processed.DocID, processed.Title, processed.BodyTokens, processed.TitleTokens, processed.IntroTokens)
 		totalDocs++
 
 		if totalDocs%10000 == 0 {

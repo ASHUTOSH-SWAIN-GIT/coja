@@ -1,0 +1,902 @@
+[
+  {
+    "query": "roger neilson",
+    "relevance": [
+      {
+        "title": "Roger Neilson",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "province of georgia",
+    "relevance": [
+      {
+        "title": "Province of Georgia",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "1999 in film",
+    "relevance": [
+      {
+        "title": "1999 in film",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "jim marshall",
+    "relevance": [
+      {
+        "title": "Jim Marshall",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "courtney browne",
+    "relevance": [
+      {
+        "title": "Courtney Browne",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "gladstone dock",
+    "relevance": [
+      {
+        "title": "Gladstone Dock",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "leadenhall market",
+    "relevance": [
+      {
+        "title": "Leadenhall Market",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "donald regan",
+    "relevance": [
+      {
+        "title": "Donald Regan",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "temperature record of the last 2,000 years",
+    "relevance": [
+      {
+        "title": "Temperature record of the last 2,000 years",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "hms leeds castle p258",
+    "relevance": [
+      {
+        "title": "HMS Leeds Castle (P258)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "general agreement on trade in services",
+    "relevance": [
+      {
+        "title": "General Agreement on Trade in Services",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "pete townshend",
+    "relevance": [
+      {
+        "title": "Pete Townshend",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "austin creek state recreation area",
+    "relevance": [
+      {
+        "title": "Austin Creek State Recreation Area",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "kappa number",
+    "relevance": [
+      {
+        "title": "Kappa number",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "trachtenberg system",
+    "relevance": [
+      {
+        "title": "Trachtenberg system",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "names of korea",
+    "relevance": [
+      {
+        "title": "Names of Korea",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "eagle claw",
+    "relevance": [
+      {
+        "title": "Eagle Claw",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "albert abrams",
+    "relevance": [
+      {
+        "title": "Albert Abrams",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "empire state disambiguation",
+    "relevance": [
+      {
+        "title": "Empire State (disambiguation)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "horicon, new york",
+    "relevance": [
+      {
+        "title": "Horicon, New York",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "ōsato district, saitama",
+    "relevance": [
+      {
+        "title": "Ōsato District, Saitama",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "croxton railway station",
+    "relevance": [
+      {
+        "title": "Croxton railway station",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "michael portnoy",
+    "relevance": [
+      {
+        "title": "Michael Portnoy",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "michael hardie boys",
+    "relevance": [
+      {
+        "title": "Michael Hardie Boys",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "st. mary's international school",
+    "relevance": [
+      {
+        "title": "St. Mary's International School",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "lady charlotte guest",
+    "relevance": [
+      {
+        "title": "Lady Charlotte Guest",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "cambie street",
+    "relevance": [
+      {
+        "title": "Cambie Street",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "truman, minnesota",
+    "relevance": [
+      {
+        "title": "Truman, Minnesota",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "haakon vii",
+    "relevance": [
+      {
+        "title": "Haakon VII",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "1985 world series",
+    "relevance": [
+      {
+        "title": "1985 World Series",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "25th united states congress",
+    "relevance": [
+      {
+        "title": "25th United States Congress",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "six apart",
+    "relevance": [
+      {
+        "title": "Six Apart",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "communes of the pas-de-calais department",
+    "relevance": [
+      {
+        "title": "Communes of the Pas-de-Calais department",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "rush big audio dynamite ii song",
+    "relevance": [
+      {
+        "title": "Rush (Big Audio Dynamite II song)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "brigitte bardot",
+    "relevance": [
+      {
+        "title": "Brigitte Bardot",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "eastern wood pewee",
+    "relevance": [
+      {
+        "title": "Eastern wood pewee",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "tsopk shahunyats",
+    "relevance": [
+      {
+        "title": "Tsopk Shahunyats",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "iae v2500",
+    "relevance": [
+      {
+        "title": "IAE V2500",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "metamora, illinois",
+    "relevance": [
+      {
+        "title": "Metamora, Illinois",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "list of members of the order of merit",
+    "relevance": [
+      {
+        "title": "List of members of the Order of Merit",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "thurston county, nebraska",
+    "relevance": [
+      {
+        "title": "Thurston County, Nebraska",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "cypress avenue station",
+    "relevance": [
+      {
+        "title": "Cypress Avenue station",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "k. r. narayanan",
+    "relevance": [
+      {
+        "title": "K. R. Narayanan",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "samer majali",
+    "relevance": [
+      {
+        "title": "Samer Majali",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "second-degree atrioventricular block",
+    "relevance": [
+      {
+        "title": "Second-degree atrioventricular block",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "edwin howard armstrong",
+    "relevance": [
+      {
+        "title": "Edwin Howard Armstrong",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "jupiter island",
+    "relevance": [
+      {
+        "title": "Jupiter Island",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "1994 nhl entry draft",
+    "relevance": [
+      {
+        "title": "1994 NHL entry draft",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "queen's house",
+    "relevance": [
+      {
+        "title": "Queen's House",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "edge of chaos",
+    "relevance": [
+      {
+        "title": "Edge of chaos",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "maria cunitz",
+    "relevance": [
+      {
+        "title": "Maria Cunitz",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "lauren michelle hill",
+    "relevance": [
+      {
+        "title": "Lauren Michelle Hill",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "cotton library",
+    "relevance": [
+      {
+        "title": "Cotton library",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "claremont, western australia",
+    "relevance": [
+      {
+        "title": "Claremont, Western Australia",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "alyson stoner",
+    "relevance": [
+      {
+        "title": "Alyson Stoner",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "houston zoo",
+    "relevance": [
+      {
+        "title": "Houston Zoo",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "mesilla, new mexico",
+    "relevance": [
+      {
+        "title": "Mesilla, New Mexico",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "gabriel bethlen",
+    "relevance": [
+      {
+        "title": "Gabriel Bethlen",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "mike judge",
+    "relevance": [
+      {
+        "title": "Mike Judge",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "evan dando",
+    "relevance": [
+      {
+        "title": "Evan Dando",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "mustafa i",
+    "relevance": [
+      {
+        "title": "Mustafa I",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "1999 belgian regional elections",
+    "relevance": [
+      {
+        "title": "1999 Belgian regional elections",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "edward brandt jr.",
+    "relevance": [
+      {
+        "title": "Edward Brandt Jr.",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "guerrilla warfare",
+    "relevance": [
+      {
+        "title": "Guerrilla warfare",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "25 bank street",
+    "relevance": [
+      {
+        "title": "25 Bank Street",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "bidhu jha",
+    "relevance": [
+      {
+        "title": "Bidhu Jha",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "saoul mamby",
+    "relevance": [
+      {
+        "title": "Saoul Mamby",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "war machine",
+    "relevance": [
+      {
+        "title": "War Machine",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "stephen hunt author",
+    "relevance": [
+      {
+        "title": "Stephen Hunt (author)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "zhang fei",
+    "relevance": [
+      {
+        "title": "Zhang Fei",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "preble county, ohio",
+    "relevance": [
+      {
+        "title": "Preble County, Ohio",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "philip k. dick",
+    "relevance": [
+      {
+        "title": "Philip K. Dick",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "how hill",
+    "relevance": [
+      {
+        "title": "How Hill",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "synchronous orbit",
+    "relevance": [
+      {
+        "title": "Synchronous orbit",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "paton, iowa",
+    "relevance": [
+      {
+        "title": "Paton, Iowa",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "trans am band",
+    "relevance": [
+      {
+        "title": "Trans Am (band)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "palacio de lecumberri",
+    "relevance": [
+      {
+        "title": "Palacio de Lecumberri",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "byers, kansas",
+    "relevance": [
+      {
+        "title": "Byers, Kansas",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "procedural defense",
+    "relevance": [
+      {
+        "title": "Procedural defense",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "radiocontrast agent",
+    "relevance": [
+      {
+        "title": "Radiocontrast agent",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "john owens merchant",
+    "relevance": [
+      {
+        "title": "John Owens (merchant)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "council on foreign relations",
+    "relevance": [
+      {
+        "title": "Council on Foreign Relations",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "kelvingrove art gallery and museum",
+    "relevance": [
+      {
+        "title": "Kelvingrove Art Gallery and Museum",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "surface anatomy",
+    "relevance": [
+      {
+        "title": "Surface anatomy",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "conscription in australia",
+    "relevance": [
+      {
+        "title": "Conscription in Australia",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "libertarian movement costa rica",
+    "relevance": [
+      {
+        "title": "Libertarian Movement (Costa Rica)",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "charles radcliffe",
+    "relevance": [
+      {
+        "title": "Charles Radcliffe",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "rick nowels",
+    "relevance": [
+      {
+        "title": "Rick Nowels",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "new castle, colorado",
+    "relevance": [
+      {
+        "title": "New Castle, Colorado",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "m. russell ballard",
+    "relevance": [
+      {
+        "title": "M. Russell Ballard",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "new york world journal tribune",
+    "relevance": [
+      {
+        "title": "New York World Journal Tribune",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "alexander barkan",
+    "relevance": [
+      {
+        "title": "Alexander Barkan",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "constant chevillon",
+    "relevance": [
+      {
+        "title": "Constant Chevillon",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "asirgarh fort",
+    "relevance": [
+      {
+        "title": "Asirgarh Fort",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "lowndesboro, alabama",
+    "relevance": [
+      {
+        "title": "Lowndesboro, Alabama",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "cocamide dea",
+    "relevance": [
+      {
+        "title": "Cocamide DEA",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "horizon-class frigate",
+    "relevance": [
+      {
+        "title": "Horizon-class frigate",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "list of massively multiplayer online role-playing games",
+    "relevance": [
+      {
+        "title": "List of massively multiplayer online role-playing games",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "luna 8",
+    "relevance": [
+      {
+        "title": "Luna 8",
+        "grade": 3
+      }
+    ]
+  },
+  {
+    "query": "tonopah test range",
+    "relevance": [
+      {
+        "title": "Tonopah Test Range",
+        "grade": 3
+      }
+    ]
+  }
+]

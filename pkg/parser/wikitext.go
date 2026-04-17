@@ -83,3 +83,24 @@ func StripWikitext(raw string) string {
 
 	return s
 }
+
+// ExtractIntro returns a compact intro snippet from cleaned article text.
+// It prefers the first sentence-like span and caps length for stable indexing.
+func ExtractIntro(clean string) string {
+	s := strings.TrimSpace(clean)
+	if s == "" {
+		return ""
+	}
+
+	const maxChars = 420
+	if len(s) <= maxChars {
+		return s
+	}
+
+	chunk := s[:maxChars]
+	lastStop := strings.LastIndexAny(chunk, ".!?")
+	if lastStop >= 120 {
+		return strings.TrimSpace(chunk[:lastStop+1])
+	}
+	return strings.TrimSpace(chunk)
+}

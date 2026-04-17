@@ -1,0 +1,22 @@
+[
+  {
+    "query": "andrew garfield",
+    "relevance": [
+      { "title": "Andrew Garfield", "grade": 3 },
+      { "title": "Garfield", "grade": 1 }
+    ]
+  },
+  {
+    "query": "\"foreign relations of india\"",
+    "relevance": [
+      { "title": "Foreign relations of India", "grade": 3 },
+      { "title": "India", "grade": 1 }
+    ]
+  },
+  {
+    "query": "miss india",
+    "relevance": [
+      { "title": "Miss India", "grade": 3 }
+    ]
+  }
+]
