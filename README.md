@@ -1,244 +1,289 @@
-# Coja
+# cója
 
-Coja is a local Wikipedia search engine in Go.
+`cója` is a local search engine over Wikipedia dump data, implemented in Go.
 
-It currently supports:
-- Streaming Wikipedia dump parsing
-- Wikitext cleanup
-- Tokenization + stemming + stopword filtering
-- Fielded inverted index (`title`, `intro`, `body`) + weighted BM25 ranking
-- Phrase-aware ranking (quoted and soft phrase matching)
-- Segment-based on-disk persistence (`.gob`)
-- Startup loading from persisted segments
-- HTTP search API and a minimal browser UI
-- Offline benchmark harness (`MRR@10`, `nDCG@10`, `Recall@50`)
+This document explains the system design, core concepts, indexing model, ranking logic, and internal data flow.
 
-## Current Architecture
+---
 
-### Indexing pipeline
+## Project Purpose
 
-1. Input source is either:
-- a `.bz2` dump path (Go can read it directly), or
-- stdin (`-`), typically fed by `pbzip2 -dc` for parallel decompression
+The project is built to implement a practical information-retrieval system from first principles, with:
+- streamed corpus ingestion,
+- fielded inverted indexing,
+- lexical ranking with BM25,
+- phrase/proximity-aware relevance adjustments,
+- and reproducible offline evaluation.
 
-2. Parser streams XML pages sequentially.
-3. Worker pool processes pages in parallel:
-- strip wikitext
-- extract intro snippet from cleaned text
-- tokenize `title`, `intro`, and `body`
-- stem/filter terms
-- emit typed `{docID, title, titleTokens, introTokens, bodyTokens}` work items
+The design favors clarity of IR concepts and debuggability over distributed scale.
 
-4. Single collector goroutine updates in-memory index.
-5. Collector checkpoints every `N` docs into segment files:
-- `segment_000001.gob`, `segment_000002.gob`, ...
-- `manifest.json` with metadata
+---
 
-### Search pipeline
+## Core Concepts Used
 
-1. Server loads `manifest.json`.
-2. Server loads all segment files into memory and merges them.
-3. Query is parsed into terms + phrases:
-- quoted phrases: `"..."` become explicit phrase constraints/boosts
-- unquoted multi-term query also gets a soft phrase boost
-4. Weighted fielded BM25 ranks candidates:
-- `score = w_title*BM25(title) + w_intro*BM25(intro) + w_body*BM25(body) + phrase_boost`
-5. Retrieval uses strict all-term matching first, then partial-match fallback if needed.
-6. Results are returned as JSON (`/search`) or rendered in minimal UI (`/`).
+### 1) Inverted index
 
-## Repository Layout
+The index maps normalized terms to posting lists.
 
-### Directory map
+A posting represents one document-level occurrence summary:
+- `DocID`
+- `Frequency` (term frequency in that field/document)
+- `Positions` (token positions, enabling phrase/proximity logic)
 
-- `cmd/`: runnable binaries (entrypoints)
-- `pkg/`: reusable core library code (indexing, parsing, ranking)
-- `ui/`: browser UI assets served by server
-- `benchmarks/`: judged query datasets for offline relevance evaluation
-- `data/`: generated runtime artifacts (index segments + manifest)
+### 2) Fielded retrieval
 
-### File-level responsibilities
+The same document is indexed across multiple fields:
+- `title`
+- `intro`
+- `body`
 
-#### `cmd/`
+Each field has separate posting lists and separate length statistics.  
+This enables field-aware scoring (for example, a match in title can be weighted more than body).
 
-- `cmd/indexer/main.go`
-  - Runs the full indexing pipeline
-  - Reads XML dump input (file or stdin stream)
-  - Uses worker pool to process docs (`title`, `intro`, `body` tokenization)
-  - Writes segmented index files and `manifest.json`
+### 3) BM25 ranking
 
-- `cmd/server/main.go`
-  - Loads persisted segments from disk on startup
-  - Exposes `/health` and `/search` HTTP endpoints
-  - Serves UI files (`ui/index.html`, `/static/*`)
-  - Converts ranked titles into Wikipedia links for client responses
+BM25 is used as the base lexical scoring function.  
+Scoring is computed independently per field and combined as a weighted sum:
 
-- `cmd/benchmark/main.go`
-  - Loads saved index segments
-  - Loads judged query file
-  - Executes search and computes relevance metrics:
-    - `MRR@10`
-    - `nDCG@10`
-    - `Recall@50`
+`score = w_title * BM25(title) + w_intro * BM25(intro) + w_body * BM25(body) + phraseBoost`
 
-#### `pkg/`
+Current relative weighting emphasizes title and intro over body.
 
-- `pkg/parser/parser.go`
-  - Streaming XML parser for Wikipedia dump pages
-  - Handles file path input, stdin input, `.bz2` and plain XML streams
-  - Emits article docs while skipping non-article and redirect pages
+### 4) Phrase and positional relevance
 
-- `pkg/parser/wikitext.go`
-  - Cleans MediaWiki/HTML markup into plain text (`StripWikitext`)
-  - Extracts compact intro snippet from cleaned text (`ExtractIntro`)
+Because postings store token positions, the system can reward exact in-order adjacency for query phrases.
 
-- `pkg/tokenizer/tokenizer.go`
-  - Tokenization over alphanumeric boundaries
-  - Lowercasing, stopword filtering, digit-only filtering
-  - Emits token + position pairs
+Phrase boosts are field-sensitive:
+- strongest in `title`,
+- then `intro`,
+- then `body`.
 
-- `pkg/tokenizer/stemmer.go`
-  - Lightweight stemming rules for normalization
+### 5) Two-stage retrieval behavior
 
-- `pkg/index/index.go`
-  - Core in-memory index data structures
-  - Fielded postings:
-    - `PostingLists` (body)
-    - `TitlePostingLists` (title)
-    - `IntroPostingLists` (intro)
-  - Document metadata and corpus statistics
-  - Segment merge behavior
+For multi-term queries:
+1. strict stage requires all query terms,
+2. fallback stage allows partial matches if strict stage yields no results.
 
-- `pkg/index/search.go`
-  - Query parsing (`ParseQuery`) with quoted phrase extraction
-  - Weighted fielded BM25 scoring over title/intro/body
-  - Phrase boost scoring (title > intro > body)
-  - Strict all-term retrieval with partial-match fallback
+This balances precision and recall for entity-style queries.
 
-- `pkg/index/persist.go`
-  - Gob serialization/deserialization for index segments
-  - Backward-safe map initialization during load
+### 6) Offline relevance evaluation
 
-- `pkg/index/manifest.go`
-  - Manifest file parsing
-  - Segment loading and merged index materialization
+A benchmark runner evaluates ranked output using judged query sets and computes:
+- `MRR@10`
+- `nDCG@10`
+- `Recall@50`
 
-#### `ui/`
+This provides objective tuning feedback for ranking changes.
 
-- `ui/index.html`
-  - Search page structure
+---
 
-- `ui/script.js`
-  - Calls `/search` API
-  - Renders results list and metadata
+## System Architecture
 
-- `ui/style.css`
-  - UI styling
+The system has three major runtime paths:
 
-#### `benchmarks/`
+1. **Indexing path**: converts Wikipedia dump pages into persisted index segments.
+2. **Serving path**: loads persisted segments into memory and answers queries.
+3. **Evaluation path**: runs judged queries and computes quality metrics.
 
-- `benchmarks/queries.sample.json`
-  - Example judged query file with graded relevance labels
+---
 
-## Quick Start
+## Indexing Path (Conceptual Flow)
 
-## 1) Build index segments
+1. **Input stream**
+   - Wikipedia XML is consumed either from a file stream or stdin stream.
+   - Parsing is sequential because XML token order is linear.
 
-Recommended (faster decompression using all cores):
+2. **Document extraction**
+   - Only article namespace pages are kept.
+   - Redirect pages are skipped.
 
-```bash
-pbzip2 -dc enwiki-2026-04-01-p10p1141529.xml.bz2 | go run cmd/indexer/main.go -workers 12 -checkpoint-docs 100000 -out-dir data/index -
-```
+3. **Text normalization**
+   - MediaWiki markup and HTML-like artifacts are removed.
+   - Entities and whitespace are normalized.
 
-Alternative (single-process decompression in Go):
+4. **Field preparation**
+   - `title` comes from page metadata.
+   - `body` comes from cleaned article text.
+   - `intro` is a compact first-sentence-like snippet derived from body.
 
-```bash
-go run cmd/indexer/main.go -workers 12 -checkpoint-docs 100000 -out-dir data/index enwiki-2026-04-01-p10p1141529.xml.bz2
-```
+5. **Tokenization and stemming**
+   - lowercasing
+   - boundary-based token splitting
+   - stopword and numeric filtering
+   - lightweight stemming
+   - positional emission
 
-Useful flags:
-- `-workers`: text processing workers (default: CPU count)
-- `-checkpoint-docs`: docs per segment (default: `100000`)
-- `-out-dir`: index output directory (default: `data/index`)
+6. **Index construction**
+   - for each field, per-term positions/frequencies are aggregated per document.
+   - posting lists are updated.
+   - document length and corpus stats are updated.
 
-## 2) Start search server
+7. **Segment persistence**
+   - documents are indexed in bounded chunks.
+   - each chunk is serialized as a segment file.
+   - a manifest records segment inventory and corpus-level metadata.
 
-```bash
-go run cmd/server/main.go -index-dir data/index -port 8080
-```
+---
 
-Then open:
-- UI: `http://localhost:8080/`
-- Health: `http://localhost:8080/health`
-- Search API: `http://localhost:8080/search?q=india&k=5`
+## Serving Path (Conceptual Flow)
 
-## 3) Run relevance benchmark
+1. Manifest is read.
+2. Referenced segments are loaded and merged into one in-memory index.
+3. Query text is parsed into:
+   - normalized terms,
+   - optional quoted phrases,
+   - optional soft phrase for unquoted multi-term queries.
+4. Candidate scoring is computed with weighted fielded BM25.
+5. Phrase/proximity boosts are applied using positional postings.
+6. Strict-or-fallback retrieval mode selects result set.
+7. Ranked results are returned with canonical Wikipedia URLs.
 
-```bash
-go run cmd/benchmark/main.go -index-dir data/index -queries benchmarks/queries.sample.json -verbose
-```
+---
 
-## API
+## Query Interpretation Model
 
-## `GET /health`
+### Terms
 
-Returns basic server/index status:
+All query text goes through the same normalization pipeline used during indexing to ensure term-space consistency.
 
-```json
-{
-  "ok": true,
-  "source": "-",
-  "segments": 4,
-  "total_docs": 355166,
-  "total_terms": 2848252
-}
-```
+### Quoted phrases
 
-## `GET /search?q=<query>&k=<int>`
+Quoted substrings are parsed as explicit phrase intents and receive targeted positional boosts.
 
-Parameters:
-- `q` (required): query string
-- `k` (optional): top-k results, clamped to `1..100` (default from `-topk-default`)
+### Soft phrase behavior
 
-Example response:
+When a query has multiple unquoted terms, the full term sequence is treated as a soft phrase candidate, improving name/entity ranking without requiring explicit quotes.
 
-```json
-{
-  "query": "india",
-  "results_count": 2,
-  "duration_ms": 11,
-  "results": [
-    {
-      "title": "List of Indian Mutiny Victoria Cross recipients",
-      "url": "https://en.wikipedia.org/wiki/List_of_Indian_Mutiny_Victoria_Cross_recipients"
-    }
-  ]
-}
-```
+---
 
-## Index Output Format
+## Ranking Details
 
-`data/index/manifest.json`:
-- source input (`source`)
-- worker/checkpoint config
-- segment list and per-segment stats
-- total docs/tokens
+### Base scoring
 
-`data/index/segment_*.gob`:
-- serialized `pkg/index.Index`
-- fielded postings maps (`title`, `intro`, `body`), doc store, corpus stats
+For each query term:
+- compute field-specific BM25 using field-specific document length normalization.
+- accumulate weighted contribution across fields.
 
-## Notes and Limitations (Current)
+### Coverage scaling
 
-- Server loads all segments into RAM at startup for faster query latency.
-- Startup time depends on index size (for ~2.2GB segments, roughly tens of seconds).
-- No distributed indexing/search; single-node local process.
-- No incremental merge/compaction pipeline yet.
-- No authentication/rate limiting; intended for local usage.
+Documents that match a higher fraction of query terms are scaled upward.
 
-## Development
+### Phrase boosts
 
-Run tests:
+For each phrase candidate:
+- detect adjacent in-order term positions by field.
+- apply additive boosts with highest priority for title matches.
 
-```bash
-go test ./...
-```
+### Final ordering
+
+Results are sorted by descending score, with deterministic tie-break behavior.
+
+---
+
+## Data Model
+
+### Index structures
+
+- **Posting lists**
+  - `PostingLists` (body)
+  - `TitlePostingLists` (title)
+  - `IntroPostingLists` (intro)
+
+- **Document store**
+  - document title
+  - per-field lengths
+
+- **Corpus stats**
+  - total docs
+  - per-field total token counts
+  - derived average field lengths
+
+### Persistence structures
+
+- **Segment files**
+  - serialized index shards
+  - intended for bounded-memory indexing and resumable artifacts
+
+- **Manifest**
+  - segment inventory
+  - indexing parameters
+  - corpus aggregate stats
+
+---
+
+## Codebase Map (Responsibilities)
+
+### `cmd/`
+
+- `cmd/indexer/main.go`: indexing orchestration, worker/collector pipeline, segment writing.
+- `cmd/server/main.go`: search serving, query handling, result projection.
+- `cmd/benchmark/main.go`: judged-query evaluation and metrics reporting.
+
+### `pkg/parser/`
+
+- `parser.go`: streaming XML page extraction.
+- `wikitext.go`: wiki markup cleaning and intro extraction.
+
+### `pkg/tokenizer/`
+
+- `tokenizer.go`: normalization/tokenization pipeline with positions.
+- `stemmer.go`: stemming logic.
+
+### `pkg/index/`
+
+- `index.go`: core index schema, per-field stats, merge.
+- `search.go`: query parsing + scoring + ranking.
+- `persist.go`: segment serialization/deserialization.
+- `manifest.go`: manifest parsing and segment loading.
+
+### `ui/`
+
+UI layer consuming `/search` responses for result presentation.
+
+### `benchmarks/`
+
+Judged query files used by the evaluation runner.
+
+---
+
+## Design Tradeoffs
+
+### Chosen tradeoffs
+
+- **Startup-heavy, query-fast serving**
+  - all segments are loaded into RAM before serving.
+- **Lexical and explainable ranking**
+  - BM25 + explicit boosts rather than opaque ML ranking.
+- **Simple local persistence**
+  - gob-based segments for straightforward serialization.
+
+### Consequences
+
+- restart requires reload/merge of persisted segments,
+- memory usage grows with indexed corpus size,
+- quality is bounded by lexical features and judged-set coverage.
+
+---
+
+## Current Limitations
+
+- Single-node in-memory serving model.
+- No typo correction or synonym/alias expansion yet.
+- No learned reranking stage.
+- No distributed indexing/search execution.
+- No production hardening layer (auth, quotas, multi-tenant controls).
+
+---
+
+## Summary
+
+`cója` currently represents a complete lexical IR stack:
+- streamed ingestion,
+- fielded positional indexing,
+- weighted BM25 + phrase-aware ranking,
+- persistent segments,
+- online serving,
+- and offline quality measurement.
+
+Its architecture is intentionally modular so ranking and storage strategies can evolve independently.
+
